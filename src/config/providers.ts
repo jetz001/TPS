@@ -40,6 +40,19 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
 
   // --- Cloud Providers ---
   {
+    id: 'ollama_cloud',
+    name: 'Ollama Cloud 🦙',
+    type: 'cloud',
+    defaultUrl: 'https://ollama.com/v1',
+    envKeyNames: ['OLLAMA_API_KEY', 'RESEARCH_API_KEY'],
+    recommendedModels: [
+      'gpt-oss:120b',
+      'qwen2.5:72b',
+      'deepseek-r1:70b',
+      'llama3.3:70b'
+    ]
+  },
+  {
     id: 'openrouter',
     name: 'OpenRouter',
     type: 'cloud',
