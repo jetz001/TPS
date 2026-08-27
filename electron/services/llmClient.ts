@@ -228,18 +228,22 @@ async function executeSingleStreamRequest(req: ChatCompletionRequest): Promise<C
 
       res.on('end', () => {
         const endTime = Date.now()
-        const totalDurationMs = endTime - startTime
-        const ttftMs = firstTokenTime ? (firstTokenTime - startTime) : totalDurationMs
-        const genDurationSec = firstTokenTime ? Math.max((endTime - firstTokenTime) / 1000, 0.001) : (totalDurationMs / 1000)
+        const totalDurationMs = Math.max(endTime - startTime, 1)
+        const ttftMs = firstTokenTime ? Math.max(firstTokenTime - startTime, 1) : totalDurationMs
         
         // If completion tokens wasn't returned by usage, estimate
         if (completionTokens === 0) {
-          // Token estimate: ~0.75 words per token or simple count
           completionTokens = tokenCount > 0 ? tokenCount : Math.ceil(fullText.length / 3.8)
         }
         if (promptTokens === 0) {
           promptTokens = Math.ceil(JSON.stringify(req.messages).length / 4)
         }
+
+        // Realistic generation duration (if streaming delta > 30ms, measure stream duration; otherwise use total duration)
+        const streamDeltaMs = firstTokenTime ? (endTime - firstTokenTime) : 0
+        const genDurationSec = streamDeltaMs > 30 
+          ? (streamDeltaMs / 1000) 
+          : Math.max(totalDurationMs / 1000, 0.08)
 
         const generationTps = Number((completionTokens / genDurationSec).toFixed(2))
 

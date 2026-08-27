@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { Trophy, Download, Trash2, Zap, Clock, ShieldCheck, FileSpreadsheet, Globe, Laptop, Filter } from 'lucide-react'
+import { Trophy, Download, Trash2, Zap, Clock, ShieldCheck, FileSpreadsheet, Globe, Laptop, ArrowUpDown, ArrowUp, ArrowDown, Award, Medal } from 'lucide-react'
 import { BenchmarkRun, ProviderType } from '../../types'
 
 interface LeaderboardTabProps {
   latestRun: BenchmarkRun | null
 }
 
+type SortField = 'rank' | 'score' | 'tps' | 'ttft' | 'date'
+type SortOrder = 'asc' | 'desc'
+
 export const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ latestRun }) => {
   const [history, setHistory] = useState<BenchmarkRun[]>([])
   const [filterType, setFilterType] = useState<'all' | ProviderType>('all')
+  const [sortField, setSortField] = useState<SortField>('rank')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
   const loadHistory = async () => {
     if (window.electronAPI?.getHistory) {
@@ -34,21 +39,67 @@ export const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ latestRun }) => 
     }
   }
 
-  const filteredHistory = history.filter(run => {
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder(field === 'ttft' ? 'asc' : 'desc')
+    }
+  }
+
+  // Filter runs
+  const filtered = history.filter(run => {
     if (filterType === 'all') return true
     const isCloud = run.providerType === 'cloud' || (!run.endpoint.includes('localhost') && !run.endpoint.includes('127.0.0.1'))
     return filterType === 'cloud' ? isCloud : !isCloud
   })
 
+  // Sort runs
+  const sortedHistory = [...filtered].sort((a, b) => {
+    if (sortField === 'rank' || sortField === 'score') {
+      // Primary: Score %, Secondary: TPS, Tertiary: TTFT
+      if (a.summary.scorePercent !== b.summary.scorePercent) {
+        return sortOrder === 'desc' 
+          ? b.summary.scorePercent - a.summary.scorePercent
+          : a.summary.scorePercent - b.summary.scorePercent
+      }
+      if (a.summary.avgTps !== b.summary.avgTps) {
+        return b.summary.avgTps - a.summary.avgTps
+      }
+      return a.summary.avgTtftMs - b.summary.avgTtftMs
+    }
+
+    if (sortField === 'tps') {
+      return sortOrder === 'desc' 
+        ? b.summary.avgTps - a.summary.avgTps 
+        : a.summary.avgTps - b.summary.avgTps
+    }
+
+    if (sortField === 'ttft') {
+      return sortOrder === 'asc' 
+        ? a.summary.avgTtftMs - b.summary.avgTtftMs 
+        : b.summary.avgTtftMs - a.summary.avgTtftMs
+    }
+
+    if (sortField === 'date') {
+      const dateA = new Date(a.timestamp).getTime()
+      const dateB = new Date(b.timestamp).getTime()
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+    }
+
+    return 0
+  })
+
   const handleExportMarkdown = () => {
-    if (filteredHistory.length === 0) return
+    if (sortedHistory.length === 0) return
 
     let md = `# 🏆 Universal AI Model Benchmark Leaderboard\n\n`
     md += `*Generated on ${new Date().toLocaleString()}*\n\n`
     md += `| Rank | Model | Type | Provider | Tool Score (%) | Avg TPS | Avg TTFT (ms) | Total Tests | Date |\n`
     md += `|---|---|---|---|---|---|---|---|---|\n`
 
-    filteredHistory.forEach((run, idx) => {
+    sortedHistory.forEach((run, idx) => {
       const isCloud = run.providerType === 'cloud' || (!run.endpoint.includes('localhost') && !run.endpoint.includes('127.0.0.1'))
       const pType = isCloud ? 'Cloud ☁️' : 'Local 💻'
       const pName = run.providerName || (isCloud ? 'Cloud' : 'Local')
@@ -56,7 +107,7 @@ export const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ latestRun }) => 
     })
 
     md += `\n\n## Detailed Runs Summary\n`
-    for (const run of filteredHistory) {
+    for (const run of sortedHistory) {
       md += `\n### Model: ${run.model} (${new Date(run.timestamp).toLocaleString()})\n`
       md += `- **Provider:** ${run.providerName || (run.providerType === 'cloud' ? 'Cloud' : 'Local')} (\`${run.endpoint}\`)\n`
       md += `- **Avg TPS:** ${run.summary.avgTps} tokens/sec\n`
@@ -79,8 +130,8 @@ export const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ latestRun }) => 
   }
 
   const handleExportJson = () => {
-    if (filteredHistory.length === 0) return
-    const blob = new Blob([JSON.stringify(filteredHistory, null, 2)], { type: 'application/json' })
+    if (sortedHistory.length === 0) return
+    const blob = new Blob([JSON.stringify(sortedHistory, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -89,19 +140,26 @@ export const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ latestRun }) => 
     URL.revokeObjectURL(url)
   }
 
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40 inline-block ml-1" />
+    return sortOrder === 'desc' 
+      ? <ArrowDown className="w-3 h-3 text-accent-cyan inline-block ml-1 font-bold" />
+      : <ArrowUp className="w-3 h-3 text-accent-cyan inline-block ml-1 font-bold" />
+  }
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Top Banner */}
       <div className="bg-surface rounded-xl p-6 border border-surface-light shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center space-x-2">
-            <h2 className="text-xl font-bold text-white tracking-tight">Model Comparison Leaderboard</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">🏆 Model Comparison Leaderboard</h2>
             <span className="text-xs font-mono bg-surface-light text-accent-amber px-2 py-0.5 rounded border border-surface-lighter">
               {history.length} Runs Total
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1">
-            Compare throughput (TPS), latency (TTFT), and 5-dimension tool calling accuracy across Local & Cloud models.
+            จัดอันดับโมเดลตามความแม่นยำของ Tool Calling (%) และความเร็ว TPS จริง (คลิกที่หัวตารางเพื่อเปลี่ยนการจัดเรียงได้)
           </p>
         </div>
 
@@ -144,8 +202,8 @@ export const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ latestRun }) => 
 
           <button
             onClick={handleExportMarkdown}
-            disabled={filteredHistory.length === 0}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-surface-light hover:bg-surface-lighter border border-surface-lighter text-slate-200 rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+            disabled={sortedHistory.length === 0}
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-surface-light hover:bg-surface-lighter border border-surface-lighter text-slate-200 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 font-mono"
           >
             <Download className="w-3.5 h-3.5 text-accent-cyan" />
             <span>Markdown</span>
@@ -153,8 +211,8 @@ export const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ latestRun }) => 
 
           <button
             onClick={handleExportJson}
-            disabled={filteredHistory.length === 0}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-surface-light hover:bg-surface-lighter border border-surface-lighter text-slate-200 rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+            disabled={sortedHistory.length === 0}
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-surface-light hover:bg-surface-lighter border border-surface-lighter text-slate-200 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 font-mono"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-accent-emerald" />
             <span>JSON</span>
@@ -174,32 +232,70 @@ export const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ latestRun }) => 
       {/* Leaderboard Table */}
       <div className="bg-surface rounded-xl border border-surface-light overflow-hidden shadow-xl">
         <table className="w-full text-left text-xs">
-          <thead className="bg-surface-light text-slate-400 font-mono uppercase text-[11px] border-b border-surface-lighter">
+          <thead className="bg-surface-light text-slate-400 font-mono uppercase text-[11px] border-b border-surface-lighter select-none">
             <tr>
-              <th className="p-4">Rank</th>
+              <th 
+                onClick={() => handleSort('rank')}
+                className="p-4 cursor-pointer hover:text-white transition-colors"
+                title="Sort by Rank / Overall Performance"
+              >
+                Rank {renderSortIcon('rank')}
+              </th>
               <th className="p-4">Model Name</th>
               <th className="p-4">Type & Provider</th>
-              <th className="p-4 text-center">Tool Score</th>
-              <th className="p-4 text-right">Avg TPS</th>
-              <th className="p-4 text-right">Avg TTFT</th>
-              <th className="p-4 text-right">Date & Time</th>
+              <th 
+                onClick={() => handleSort('score')}
+                className="p-4 text-center cursor-pointer hover:text-white transition-colors"
+                title="Sort by Tool Score (%)"
+              >
+                Tool Score {renderSortIcon('score')}
+              </th>
+              <th 
+                onClick={() => handleSort('tps')}
+                className="p-4 text-right cursor-pointer hover:text-white transition-colors"
+                title="Sort by Generation TPS"
+              >
+                Avg TPS {renderSortIcon('tps')}
+              </th>
+              <th 
+                onClick={() => handleSort('ttft')}
+                className="p-4 text-right cursor-pointer hover:text-white transition-colors"
+                title="Sort by TTFT Latency"
+              >
+                Avg TTFT {renderSortIcon('ttft')}
+              </th>
+              <th 
+                onClick={() => handleSort('date')}
+                className="p-4 text-right cursor-pointer hover:text-white transition-colors"
+                title="Sort by Date"
+              >
+                Date & Time {renderSortIcon('date')}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-light font-mono">
-            {filteredHistory.length > 0 ? (
-              filteredHistory.map((run, idx) => {
+            {sortedHistory.length > 0 ? (
+              sortedHistory.map((run, idx) => {
                 const isCloud = run.providerType === 'cloud' || (!run.endpoint.includes('localhost') && !run.endpoint.includes('127.0.0.1'))
-                const providerName = run.providerName || (isCloud ? (run.endpoint.includes('openrouter') ? 'OpenRouter' : run.endpoint.includes('deepseek') ? 'DeepSeek' : 'Cloud') : 'Local')
+                const providerName = run.providerName || (isCloud ? (run.endpoint.includes('openrouter') ? 'OpenRouter' : run.endpoint.includes('deepseek') ? 'DeepSeek' : run.endpoint.includes('groq') ? 'Groq' : run.endpoint.includes('mistral') ? 'Mistral AI' : 'Cloud') : 'Local')
 
                 return (
                   <tr key={run.id} className="hover:bg-surface-light/30 transition-colors">
-                    <td className="p-4 font-bold text-slate-400">
+                    <td className="p-4 font-bold">
                       {idx === 0 ? (
-                        <span className="flex items-center text-accent-amber gap-1">
-                          <Trophy className="w-4 h-4" /> #1
+                        <span className="flex items-center text-amber-400 gap-1 font-black bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/30 w-fit">
+                          <Trophy className="w-4 h-4 text-amber-400" /> #1
+                        </span>
+                      ) : idx === 1 ? (
+                        <span className="flex items-center text-slate-200 gap-1 font-bold bg-slate-300/10 px-2 py-0.5 rounded-lg border border-slate-300/30 w-fit">
+                          <Award className="w-4 h-4 text-slate-300" /> #2
+                        </span>
+                      ) : idx === 2 ? (
+                        <span className="flex items-center text-amber-600 gap-1 font-bold bg-amber-700/10 px-2 py-0.5 rounded-lg border border-amber-600/30 w-fit">
+                          <Medal className="w-4 h-4 text-amber-600" /> #3
                         </span>
                       ) : (
-                        `#${idx + 1}`
+                        <span className="text-slate-400 pl-1.5 font-semibold">#{idx + 1}</span>
                       )}
                     </td>
                     <td className="p-4 font-bold text-white font-sans text-sm">
