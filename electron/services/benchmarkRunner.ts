@@ -38,6 +38,9 @@ export async function executeBenchmarkSuite(
 
   for (let i = 0; i < testsToRun.length; i++) {
     if (isCancelled) break
+    if (i > 0) {
+      await new Promise(r => setTimeout(r, 600))
+    }
 
     const testCase = testsToRun[i]
     window?.webContents.send('benchmark:progress', {

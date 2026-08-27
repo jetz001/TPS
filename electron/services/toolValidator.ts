@@ -73,7 +73,14 @@ export function validateToolCalls(
     if (parsedCalls.length === 0) {
       errors.push(`Expected 1 tool call, but none was triggered. Model returned raw text instead.`)
     } else if (parsedCalls.length > 1) {
-      errors.push(`Expected exactly 1 tool call, but received ${parsedCalls.length}`)
+      // If it's multi_tool_routing, as long as all calls match the expected tool (e.g. model intelligently split search queries), allow it
+      const allMatchExpected = testCase.category === 'multi_tool_routing' &&
+        testCase.expectedCalls &&
+        parsedCalls.every(c => testCase.expectedCalls?.some(exp => exp.name.toLowerCase() === c.name.toLowerCase()))
+      
+      if (!allMatchExpected) {
+        errors.push(`Expected 1 tool call, but received ${parsedCalls.length}`)
+      }
     }
   } else if (testCase.expectedCallType === 'multiple') {
     if (parsedCalls.length < 2) {

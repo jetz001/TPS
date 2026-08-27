@@ -63,7 +63,27 @@ export async function fetchAvailableModels(endpoint: string, apiKey?: string): P
   return []
 }
 
-export async function streamChatCompletion(req: ChatCompletionRequest): Promise<ChatCompletionResult> {
+export async function streamChatCompletion(req: ChatCompletionRequest, maxRetries = 2): Promise<ChatCompletionResult> {
+  let attempt = 0
+  while (attempt <= maxRetries) {
+    try {
+      return await executeSingleStreamRequest(req)
+    } catch (err: any) {
+      const isRateLimit = err.message && (err.message.includes('429') || err.message.includes('rate-limited') || err.message.includes('Rate limit') || err.message.includes('temporarily'))
+      if (attempt < maxRetries && isRateLimit) {
+        attempt++
+        const waitMs = 3000 * attempt
+        console.warn(`[Retry ${attempt}/${maxRetries}] Hit upstream rate limit (429), waiting ${waitMs}ms before retrying...`)
+        await new Promise(resolve => setTimeout(resolve, waitMs))
+      } else {
+        throw err
+      }
+    }
+  }
+  throw new Error('Maximum request retries exceeded')
+}
+
+async function executeSingleStreamRequest(req: ChatCompletionRequest): Promise<ChatCompletionResult> {
   const cleanEndpoint = req.endpoint.replace(/\/+$/, '')
   const url = cleanEndpoint.endsWith('/v1') 
     ? `${cleanEndpoint}/chat/completions` 
