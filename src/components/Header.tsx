@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Server, RefreshCw, Sparkles, Key, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Server, RefreshCw, Key, CheckCircle2, AlertCircle } from 'lucide-react'
 import { HwTelemetryBar } from './common/HwTelemetryBar'
+import logoImg from '../assets/logo.jpg'
 
 interface HeaderProps {
   endpoint: string
@@ -66,12 +67,12 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="bg-surface border-b border-surface-light px-5 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-50">
       {/* Brand & Logo */}
       <div className="flex items-center space-x-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-600 to-accent-cyan flex items-center justify-center shadow-lg shadow-primary-500/20">
-          <Sparkles className="w-5 h-5 text-white" />
+        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-cyan-500/20 border border-cyan-500/30 flex-shrink-0 bg-background">
+          <img src={logoImg} alt="App Logo" className="w-full h-full object-cover" />
         </div>
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="font-bold text-base tracking-tight text-white">Local AI Benchmark</h1>
+            <h1 className="font-bold text-base tracking-tight text-white">NeuroSpeed Benchmark</h1>
             <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-primary-500/20 text-primary-400 font-semibold border border-primary-500/30">
               TPS & Tools
             </span>
