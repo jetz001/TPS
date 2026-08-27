@@ -222,24 +222,30 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {/* Model Selector / Custom Model ID */}
-          <div className="flex items-center space-x-1.5">
-            <select
+          {/* Editable & Searchable Model Input (Type any model or pick from preset list) */}
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              list="header-available-models-list"
+              placeholder="Select or type custom model..."
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="bg-background border border-surface-light focus:border-primary-500 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono outline-none max-w-[220px]"
-            >
+              className="bg-background border border-surface-light focus:border-primary-500 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-mono outline-none w-56 sm:w-72 shadow-inner"
+              title="พิมพ์ชื่อโมเดลเองได้อิสระ หรือเลือกจากรายการที่แนะนำ"
+            />
+            <datalist id="header-available-models-list">
               {availableModels.map(m => (
                 <option key={m} value={m}>{m}</option>
               ))}
-            </select>
+            </datalist>
+          </div>
 
-            {/* Fetch Models Button */}
-            <button
-              onClick={handleFetchModels}
-              disabled={isFetching}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-500 active:bg-primary-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-all shadow-md shadow-primary-600/20 font-mono"
-            >
+          {/* Fetch Models Button */}
+          <button
+            onClick={handleFetchModels}
+            disabled={isFetching}
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-500 active:bg-primary-700 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-all shadow-md shadow-primary-600/20 font-mono"
+          >
               <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
               <span>{isFetching ? 'Connecting...' : 'Fetch'}</span>
             </button>
