@@ -261,9 +261,8 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
         </div>
-      </div>
 
-      {errorMsg && (
+        {errorMsg && (
         <div className="bg-accent-rose/90 text-white text-xs px-4 py-1.5 rounded-lg shadow-lg font-medium animate-fadeIn flex items-center justify-between">
           <span>{errorMsg}</span>
           <button onClick={() => setErrorMsg(null)} className="text-white hover:text-slate-200 font-bold ml-2">✕</button>
