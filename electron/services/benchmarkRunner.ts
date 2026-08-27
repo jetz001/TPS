@@ -99,42 +99,99 @@ export async function executeBenchmarkSuite(
               })
             }
 
-            // Send tool outputs back to model for synthesis
-            const toolCallMessages: any[] = completion.toolCalls.map((tc, idx) => ({
-              role: 'tool',
-              tool_call_id: tc.id || `call_${idx}`,
-              name: tc.function.name,
-              content: JSON.stringify(toolExecutionResults[idx]?.output || {})
-            }))
+            const actualToolCalls = (completion.toolCalls && completion.toolCalls.length > 0)
+              ? completion.toolCalls.map((tc, idx) => ({
+                  id: tc.id || `call_${idx}`,
+                  type: 'function' as const,
+                  function: {
+                    name: tc.function.name,
+                    arguments: typeof tc.function.arguments === 'string' ? tc.function.arguments : JSON.stringify(tc.function.arguments)
+                  }
+                }))
+              : parsedCalls.map((pc, idx) => ({
+                  id: `call_${idx}`,
+                  type: 'function' as const,
+                  function: {
+                    name: pc.name,
+                    arguments: JSON.stringify(pc.arguments)
+                  }
+                }))
 
-            const turn2Messages = [
-              ...messages,
-              {
-                role: 'assistant',
-                content: completion.fullText || '',
-                tool_calls: completion.toolCalls
-              },
-              ...toolCallMessages
-            ]
+            // Attempt 1: OpenAI standard tool role
+            try {
+              const toolCallMessages: any[] = actualToolCalls.map((tc, idx) => ({
+                role: 'tool',
+                tool_call_id: tc.id,
+                name: tc.function.name,
+                content: typeof toolExecutionResults[idx]?.output === 'string'
+                  ? toolExecutionResults[idx].output
+                  : JSON.stringify(toolExecutionResults[idx]?.output || {})
+              }))
 
-            const turn2Completion = await streamChatCompletion({
-              endpoint: options.endpoint,
-              apiKey: options.apiKey,
-              model: options.model,
-              messages: turn2Messages,
-              max_tokens: 500,
-              onChunk: (delta, tokenCount, currentTps) => {
-                window?.webContents.send('benchmark:chunk', {
-                  testId: testCase.id,
-                  delta,
-                  tokenCount,
-                  currentTps
-                })
+              const turn2Messages = [
+                ...messages,
+                {
+                  role: 'assistant',
+                  content: completion.fullText || '',
+                  tool_calls: actualToolCalls
+                },
+                ...toolCallMessages
+              ]
+
+              const turn2Completion = await streamChatCompletion({
+                endpoint: options.endpoint,
+                apiKey: options.apiKey,
+                model: options.model,
+                messages: turn2Messages,
+                tools: testCase.tools,
+                max_tokens: 500,
+                onChunk: (delta, tokenCount, currentTps) => {
+                  window?.webContents.send('benchmark:chunk', {
+                    testId: testCase.id,
+                    delta,
+                    tokenCount,
+                    currentTps
+                  })
+                }
+              })
+
+              if (turn2Completion.fullText && turn2Completion.fullText.trim().length > 0) {
+                outputAfterTools = turn2Completion.fullText
+                secondTurnTps = turn2Completion.generationTps
               }
-            })
+            } catch (err1: any) {
+              console.warn(`Standard tool turn 2 attempt failed, using fallback: ${err1.message}`)
+            }
 
-            outputAfterTools = turn2Completion.fullText
-            secondTurnTps = turn2Completion.generationTps
+            // Attempt 2 Fallback: If turn 2 was empty or model does not support tool role in multi-turn
+            if (!outputAfterTools || outputAfterTools.trim().length === 0) {
+              const fallbackMessages = [
+                ...messages,
+                {
+                  role: 'user',
+                  content: `[TOOL_EXECUTION_RESULTS]:\n${JSON.stringify(toolExecutionResults, null, 2)}\n\nBased on the tool results above, provide the final comprehensive response to the user.`
+                }
+              ]
+
+              const fallbackTurn2 = await streamChatCompletion({
+                endpoint: options.endpoint,
+                apiKey: options.apiKey,
+                model: options.model,
+                messages: fallbackMessages,
+                max_tokens: 500,
+                onChunk: (delta, tokenCount, currentTps) => {
+                  window?.webContents.send('benchmark:chunk', {
+                    testId: testCase.id,
+                    delta,
+                    tokenCount,
+                    currentTps
+                  })
+                }
+              })
+
+              outputAfterTools = fallbackTurn2.fullText
+              secondTurnTps = fallbackTurn2.generationTps
+            }
           } catch (turn2Err: any) {
             console.warn(`Turn 2 (output after tools) error for ${testCase.id}:`, turn2Err)
           }
