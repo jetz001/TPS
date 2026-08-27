@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Server, RefreshCw, Key, CheckCircle2, AlertCircle } from 'lucide-react'
 import { HwTelemetryBar } from './common/HwTelemetryBar'
+import { MetricsGlossary } from './common/MetricsGlossary'
 import logoImg from '../assets/logo.jpg'
 
 interface HeaderProps {
@@ -178,6 +179,9 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Telemetry */}
         <HwTelemetryBar />
+
+        {/* Metrics Glossary Guide */}
+        <MetricsGlossary />
       </div>
 
       {errorMsg && (

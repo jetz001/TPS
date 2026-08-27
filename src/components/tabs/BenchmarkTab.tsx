@@ -248,7 +248,7 @@ export const BenchmarkTab: React.FC<BenchmarkTabProps> = ({
       {/* Summary Scorecards (If results exist) */}
       {latestRun && latestRun.summary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-surface p-4 rounded-xl border border-surface-light shadow-md">
+          <div className="bg-surface p-4 rounded-xl border border-surface-light shadow-md space-y-1">
             <span className="text-xs text-slate-400 uppercase font-mono">Overall Score</span>
             <div className="mt-1 flex items-baseline space-x-2">
               <span className="text-2xl font-black text-white">{latestRun.summary.scorePercent}%</span>
@@ -256,9 +256,10 @@ export const BenchmarkTab: React.FC<BenchmarkTabProps> = ({
                 ({latestRun.summary.passedTests}/{latestRun.summary.totalTests} passed)
               </span>
             </div>
+            <p className="text-[10px] text-slate-500 font-sans">อัตราความถูกต้องของการเลือก Tool & Schema</p>
           </div>
 
-          <div className="bg-surface p-4 rounded-xl border border-surface-light shadow-md">
+          <div className="bg-surface p-4 rounded-xl border border-surface-light shadow-md space-y-1">
             <span className="text-xs text-slate-400 uppercase font-mono flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 text-accent-amber" /> Avg Generation TPS
             </span>
@@ -267,9 +268,10 @@ export const BenchmarkTab: React.FC<BenchmarkTabProps> = ({
                 {latestRun.summary.avgTps} <span className="text-xs text-slate-400 font-sans">tokens/s</span>
               </span>
             </div>
+            <p className="text-[10px] text-slate-500 font-sans">ความเร็วเฉลี่ยในการสร้าง Token ต่อวินาที</p>
           </div>
 
-          <div className="bg-surface p-4 rounded-xl border border-surface-light shadow-md">
+          <div className="bg-surface p-4 rounded-xl border border-surface-light shadow-md space-y-1">
             <span className="text-xs text-slate-400 uppercase font-mono flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-accent-cyan" /> Avg TTFT Latency
             </span>
@@ -278,9 +280,10 @@ export const BenchmarkTab: React.FC<BenchmarkTabProps> = ({
                 {latestRun.summary.avgTtftMs} <span className="text-xs text-slate-400 font-sans">ms</span>
               </span>
             </div>
+            <p className="text-[10px] text-slate-500 font-sans">ความหน่วงเวลาตอบรับ Token แรก (มิลลิวินาที)</p>
           </div>
 
-          <div className="bg-surface p-4 rounded-xl border border-surface-light shadow-md">
+          <div className="bg-surface p-4 rounded-xl border border-surface-light shadow-md space-y-1">
             <span className="text-xs text-slate-400 uppercase font-mono flex items-center gap-1">
               <Layers className="w-3.5 h-3.5 text-accent-emerald" /> Tool Categories
             </span>
@@ -289,6 +292,7 @@ export const BenchmarkTab: React.FC<BenchmarkTabProps> = ({
                 {Object.keys(latestRun.summary.categoryScores).length} <span className="text-xs text-slate-400 font-sans">evaluated</span>
               </span>
             </div>
+            <p className="text-[10px] text-slate-500 font-sans">หมวดหมู่ทดสอบความสามารถด้าน Tool ที่ผ่านการประเมิน</p>
           </div>
         </div>
       )}
