@@ -12,7 +12,10 @@ bin/
 *.log
 *.tmp
 
-# Local Runtime Database & Cache
+# Local Runtime Database, Keys & Cache
 tps_benchmark_history.json
+tps_provider_keys.json
+.env
+*.env
 .DS_Store
 Thumbs.db

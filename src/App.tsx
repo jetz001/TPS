@@ -6,16 +6,18 @@ import { ToolAnalysisTab } from './components/tabs/ToolAnalysisTab'
 import { SandboxTab } from './components/tabs/SandboxTab'
 import { LeaderboardTab } from './components/tabs/LeaderboardTab'
 import { Zap, TrendingUp, Sparkles, Wrench, Trophy } from 'lucide-react'
-import { BenchmarkRun } from './types'
+import { BenchmarkRun, ProviderPreset } from './types'
+import { PROVIDER_PRESETS } from './config/providers'
 
 type ActiveTab = 'benchmark' | 'tps_curve' | 'tool_analysis' | 'sandbox' | 'leaderboard'
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('benchmark')
-  const [endpoint, setEndpoint] = useState('http://localhost:11434/v1')
+  const [selectedProvider, setSelectedProvider] = useState<ProviderPreset>(PROVIDER_PRESETS[0])
+  const [endpoint, setEndpoint] = useState(PROVIDER_PRESETS[0].defaultUrl)
   const [apiKey, setApiKey] = useState('')
-  const [selectedModel, setSelectedModel] = useState('')
-  const [availableModels, setAvailableModels] = useState<string[]>([])
+  const [selectedModel, setSelectedModel] = useState(PROVIDER_PRESETS[0].recommendedModels[0] || '')
+  const [availableModels, setAvailableModels] = useState<string[]>(PROVIDER_PRESETS[0].recommendedModels)
   const [isConnected, setIsConnected] = useState(false)
   const [latestRun, setLatestRun] = useState<BenchmarkRun | null>(null)
 
@@ -52,14 +54,16 @@ export const App: React.FC = () => {
         setAvailableModels={setAvailableModels}
         isConnected={isConnected}
         setIsConnected={setIsConnected}
+        selectedProvider={selectedProvider}
+        setSelectedProvider={setSelectedProvider}
       />
 
       {/* Navigation Sub-Header */}
-      <div className="bg-surface/80 border-b border-surface-light px-6 py-2 flex items-center justify-between sticky top-[68px] z-40 backdrop-blur-md">
-        <div className="flex items-center space-x-1.5">
+      <div className="bg-surface/80 border-b border-surface-light px-6 py-2 flex items-center justify-between sticky top-[108px] md:top-[98px] z-40 backdrop-blur-md">
+        <div className="flex items-center space-x-1.5 overflow-x-auto py-0.5">
           <button
             onClick={() => setActiveTab('benchmark')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'benchmark'
                 ? 'bg-primary-600/20 text-primary-400 border border-primary-500/40 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-surface-light/50'
@@ -71,7 +75,7 @@ export const App: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('tps_curve')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'tps_curve'
                 ? 'bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-surface-light/50'
@@ -83,7 +87,7 @@ export const App: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('tool_analysis')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'tool_analysis'
                 ? 'bg-accent-emerald/20 text-accent-emerald border border-accent-emerald/40 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-surface-light/50'
@@ -95,7 +99,7 @@ export const App: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('sandbox')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'sandbox'
                 ? 'bg-accent-violet/20 text-accent-violet border border-accent-violet/40 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-surface-light/50'
@@ -107,7 +111,7 @@ export const App: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'leaderboard'
                 ? 'bg-accent-amber/20 text-accent-amber border border-accent-amber/40 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-surface-light/50'
@@ -121,6 +125,9 @@ export const App: React.FC = () => {
         <div className="hidden sm:flex items-center space-x-2 text-[11px] font-mono text-slate-500">
           <span>Target:</span>
           <span className="text-slate-300 font-semibold">{selectedModel || 'None'}</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-light text-accent-cyan border border-surface-lighter">
+            {selectedProvider.name}
+          </span>
         </div>
       </div>
 
@@ -134,6 +141,7 @@ export const App: React.FC = () => {
             isConnected={isConnected}
             latestRun={latestRun}
             setLatestRun={setLatestRun}
+            selectedProvider={selectedProvider}
           />
         )}
 

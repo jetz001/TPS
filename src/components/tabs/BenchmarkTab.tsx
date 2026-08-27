@@ -3,7 +3,7 @@ import {
   Play, Square, CheckCircle, XCircle, Clock, Zap, Cpu, Terminal, 
   Layers, ChevronRight, FileText, Check, AlertTriangle 
 } from 'lucide-react'
-import { TestCategory, TestResult, BenchmarkRun } from '../../types'
+import { TestCategory, TestResult, BenchmarkRun, ProviderPreset } from '../../types'
 
 interface BenchmarkTabProps {
   endpoint: string
@@ -12,6 +12,7 @@ interface BenchmarkTabProps {
   isConnected: boolean
   latestRun: BenchmarkRun | null
   setLatestRun: (run: BenchmarkRun | null) => void
+  selectedProvider?: ProviderPreset
 }
 
 const CATEGORY_OPTIONS: Array<{ id: TestCategory; label: string; desc: string }> = [
@@ -29,7 +30,8 @@ export const BenchmarkTab: React.FC<BenchmarkTabProps> = ({
   model,
   isConnected,
   latestRun,
-  setLatestRun
+  setLatestRun,
+  selectedProvider
 }) => {
   const [selectedCategories, setSelectedCategories] = useState<TestCategory[]>([
     'tps_speed',
@@ -104,6 +106,8 @@ export const BenchmarkTab: React.FC<BenchmarkTabProps> = ({
       timestamp: new Date().toISOString(),
       endpoint,
       model,
+      providerType: selectedProvider?.type,
+      providerName: selectedProvider?.name,
       summary: {
         totalTests: 0,
         passedTests: 0,
@@ -121,7 +125,9 @@ export const BenchmarkTab: React.FC<BenchmarkTabProps> = ({
           endpoint,
           apiKey,
           model,
-          categories: selectedCategories
+          categories: selectedCategories,
+          providerType: selectedProvider?.type,
+          providerName: selectedProvider?.name
         })
         setLatestRun(finalRun)
         if (finalRun.results.length > 0) {

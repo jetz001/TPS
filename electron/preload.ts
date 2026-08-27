@@ -21,6 +21,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
   clearHistory: () => 
     ipcRenderer.invoke('storage:clearHistory'),
+
+  getProviderKeys: () => 
+    ipcRenderer.invoke('cloud:getProviderKeys'),
+
+  saveProviderKey: (providerId: string, key: string) => 
+    ipcRenderer.invoke('cloud:saveProviderKey', providerId, key),
+
+  syncEnvKeys: () => 
+    ipcRenderer.invoke('cloud:syncEnv'),
     
   executeMockTool: (name: string, args: Record<string, any>) => 
     ipcRenderer.invoke('mock:executeTool', name, args),

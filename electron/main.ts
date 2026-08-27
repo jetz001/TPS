@@ -4,7 +4,7 @@ import fs from 'fs'
 import { fetchAvailableModels, streamChatCompletion } from './services/llmClient'
 import { executeBenchmarkSuite, executeContextCurve, cancelCurrentBenchmark } from './services/benchmarkRunner'
 import { getSystemTelemetry } from './services/hwMonitor'
-import { loadBenchmarkHistory, clearBenchmarkHistory } from './services/storage'
+import { loadBenchmarkHistory, clearBenchmarkHistory, loadProviderKeys, saveProviderKey, syncEnvKeys } from './services/storage'
 import { executeMockTool } from './services/mockExecutor'
 import { COMMON_TOOLS } from './suites/builtInSuites'
 
@@ -74,6 +74,19 @@ app.whenReady().then(() => {
   ipcMain.handle('storage:clearHistory', () => {
     clearBenchmarkHistory()
     return true
+  })
+
+  ipcMain.handle('cloud:getProviderKeys', () => {
+    return loadProviderKeys()
+  })
+
+  ipcMain.handle('cloud:saveProviderKey', (_, providerId: string, key: string) => {
+    saveProviderKey(providerId, key)
+    return true
+  })
+
+  ipcMain.handle('cloud:syncEnv', () => {
+    return syncEnvKeys()
   })
 
   ipcMain.handle('mock:executeTool', async (_, name: string, args: Record<string, any>) => {

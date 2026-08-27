@@ -73,11 +73,25 @@ export interface TestResult {
   secondTurnTps?: number
 }
 
+export type ProviderType = 'local' | 'cloud'
+
+export interface ProviderPreset {
+  id: string
+  name: string
+  type: ProviderType
+  defaultUrl: string
+  recommendedModels: string[]
+  envKeyNames?: string[]
+  docsUrl?: string
+}
+
 export interface BenchmarkRun {
   id: string
   timestamp: string
   endpoint: string
   model: string
+  providerType?: ProviderType
+  providerName?: string
   summary: {
     totalTests: number
     passedTests: number

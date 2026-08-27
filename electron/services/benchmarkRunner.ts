@@ -4,7 +4,7 @@ import { streamChatCompletion } from './llmClient'
 import { validateToolCalls } from './toolValidator'
 import { executeMockTool } from './mockExecutor'
 import { saveBenchmarkRun } from './storage'
-import { BenchmarkRun, TestCategory, TestCase, TestResult, ContextCurvePoint } from '../../src/types'
+import { TestCase, TestResult, BenchmarkRun, TestCategory, ContextCurvePoint, ProviderType } from '../../src/types'
 
 let isCancelled = false
 
@@ -19,6 +19,8 @@ export async function executeBenchmarkSuite(
     apiKey?: string
     model: string
     categories?: TestCategory[]
+    providerType?: ProviderType
+    providerName?: string
   }
 ): Promise<BenchmarkRun> {
   isCancelled = false
@@ -281,6 +283,8 @@ export async function executeBenchmarkSuite(
     timestamp: new Date().toISOString(),
     endpoint: options.endpoint,
     model: options.model,
+    providerType: options.providerType || (options.endpoint?.includes('localhost') || options.endpoint?.includes('127.0.0.1') ? 'local' : 'cloud'),
+    providerName: options.providerName || (options.endpoint?.includes('openrouter') ? 'OpenRouter' : options.endpoint?.includes('deepseek') ? 'DeepSeek' : options.endpoint?.includes('groq') ? 'Groq' : options.endpoint?.includes('openai') ? 'OpenAI' : options.endpoint?.includes('googleapis') ? 'Google Gemini' : options.endpoint?.includes('mistral') ? 'Mistral AI' : options.endpoint?.includes('together') ? 'Together AI' : 'Local'),
     summary: {
       totalTests,
       passedTests,
